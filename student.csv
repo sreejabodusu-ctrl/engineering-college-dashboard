@@ -1,0 +1,5 @@
+student_id,student_name,gender,branch,year_of_study,email,phone
+1,Sreeja,Female,CSM,2,sreeja@gmail.com,9876543210
+2,Rahul,Male,CSE,3,rahul@gmail.com,9876543211
+3,Priya,Female,AIML,1,priya@gmail.com,9876543212
+4,Arjun,Male,ECE,4,arjun@gmail.com,9876543213
