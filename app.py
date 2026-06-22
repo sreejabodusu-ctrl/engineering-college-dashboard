@@ -1,58 +1,45 @@
 import streamlit as st
 import pandas as pd
-import mysql.connector
 import plotly.express as px
 
-# Page Config
+# Page Configuration
 st.set_page_config(
-    page_title="Engineering College Analytics Dashboard",
+    page_title="Engineering College Dashboard",
     page_icon="🎓",
     layout="wide"
 )
 
 st.title("🎓 Engineering College Analytics Dashboard")
 
-# MySQL Connection
-@st.cache_resource
-def get_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="engineering_college"
-    )
+# Load Data
+@st.cache_data
+def load_data():
+    return pd.read_csv("students.csv")
 
-conn = get_connection()
+df = load_data()
 
-# Load Student Data
-query = "SELECT * FROM Student"
-df = pd.read_sql(query, conn)
-
-# Sidebar
+# Sidebar Filters
 st.sidebar.header("Filters")
 
-branches = st.sidebar.multiselect(
+branch_filter = st.sidebar.multiselect(
     "Select Branch",
     options=df["branch"].unique(),
     default=df["branch"].unique()
 )
 
-filtered_df = df[df["branch"].isin(branches)]
+filtered_df = df[df["branch"].isin(branch_filter)]
 
-# KPI Cards
+# KPI Section
 col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric("Total Students", len(filtered_df))
 
 with col2:
-    st.metric("Branches", filtered_df["branch"].nunique())
+    st.metric("Total Branches", filtered_df["branch"].nunique())
 
 with col3:
-    st.metric(
-        "Average Year",
-        round(filtered_df["year_of_study"].mean(), 1)
-    )
+    st.metric("Average Year", round(filtered_df["year_of_study"].mean(), 1))
 
 st.divider()
 
@@ -77,10 +64,32 @@ fig1 = px.bar(
     branch_counts,
     x="Branch",
     y="Students",
-    title="Students per Branch"
+    title="Student Count by Branch"
 )
 
 st.plotly_chart(fig1, use_container_width=True)
+
+# Gender Distribution
+if "gender" in filtered_df.columns:
+
+    st.subheader("👥 Gender Distribution")
+
+    gender_counts = (
+        filtered_df["gender"]
+        .value_counts()
+        .reset_index()
+    )
+
+    gender_counts.columns = ["Gender", "Count"]
+
+    fig2 = px.pie(
+        gender_counts,
+        names="Gender",
+        values="Count",
+        hole=0.4
+    )
+
+    st.plotly_chart(fig2, use_container_width=True)
 
 # Year Distribution
 st.subheader("📈 Students by Year")
@@ -94,24 +103,12 @@ year_counts = (
 
 year_counts.columns = ["Year", "Students"]
 
-fig2 = px.line(
+fig3 = px.line(
     year_counts,
     x="Year",
     y="Students",
     markers=True,
-    title="Student Distribution by Year"
-)
-
-st.plotly_chart(fig2, use_container_width=True)
-
-# Pie Chart
-st.subheader("🥧 Branch Share")
-
-fig3 = px.pie(
-    branch_counts,
-    names="Branch",
-    values="Students",
-    hole=0.4
+    title="Year-wise Student Distribution"
 )
 
 st.plotly_chart(fig3, use_container_width=True)
@@ -129,8 +126,8 @@ if search:
 
     st.dataframe(result, use_container_width=True)
 
-# Download Data
-st.subheader("⬇ Download Data")
+# Download CSV
+st.subheader("⬇ Download Student Data")
 
 csv = filtered_df.to_csv(index=False)
 
